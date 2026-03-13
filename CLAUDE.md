@@ -84,6 +84,7 @@ Agents **must** read and follow the relevant guide(s) before writing any code.
 | **Python** | `.oakbox/instructions/python.md` | uv, ruff, pytest, naming, types, project layout |
 | **React / TypeScript** | `.oakbox/instructions/react.md` | npm, ESLint, Vitest, components, hooks, state |
 | **Docker** | `.oakbox/instructions/docker.md` | Dockerfiles, Compose, multi-stage builds, security |
+| **Market Analysis UI/UX** | `.oakbox/instructions/frontend-market-analysis.md` | App shell, page wireframes, component library, data types, a11y |
 
 ### DevOps
 
@@ -111,6 +112,7 @@ OakBox/
       python.md                    # Python 3.12, uv, ruff, pytest
       react.md                     # React, TypeScript, npm, Vitest
       docker.md                    # Docker, Compose, multi-stage builds
+      frontend-market-analysis.md  # Market analysis app UI/UX spec
     workflows/
       feature-pipeline.md          # Detailed pipeline spec
     status/                        # One file per feature (execution state)
