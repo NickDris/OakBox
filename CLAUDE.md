@@ -74,11 +74,31 @@ When executing a feature, follow these rules **exactly**:
 
 ---
 
+## Code Conventions & Style Guides
+
+Detailed, unambiguous conventions for each skill area live in `.oakbox/instructions/`.
+Agents **must** read and follow the relevant guide(s) before writing any code.
+
+| Guide | File | Covers |
+|-------|------|--------|
+| **Python** | `.oakbox/instructions/python.md` | uv, ruff, pytest, naming, types, project layout |
+| **React / TypeScript** | `.oakbox/instructions/react.md` | npm, ESLint, Vitest, components, hooks, state |
+| **Docker** | `.oakbox/instructions/docker.md` | Dockerfiles, Compose, multi-stage builds, security |
+
+### DevOps
+
+- **Package managers:** `uv` (Python), `npm` (frontend). No alternatives.
+- **Task runner:** GNU Make — see `Makefile` at project root.
+- Run `make help` to list all available targets.
+
+---
+
 ## Directory Layout
 
 ```
 OakBox/
   CLAUDE.md                        # This file — the master playbook
+  Makefile                         # DevOps task runner (lint, test, build, docker)
   .oakbox/
     agents/                        # Agent role prompts
       architect.md
@@ -87,6 +107,10 @@ OakBox/
       tester.md
       memory.md
       docs.md
+    instructions/                  # Code conventions & style guides
+      python.md                    # Python 3.12, uv, ruff, pytest
+      react.md                     # React, TypeScript, npm, Vitest
+      docker.md                    # Docker, Compose, multi-stage builds
     workflows/
       feature-pipeline.md          # Detailed pipeline spec
     status/                        # One file per feature (execution state)
@@ -111,13 +135,15 @@ OakBox/
 
 1. **Read your prompt file** (`.oakbox/agents/<role>.md`) before acting.
 2. **Read the status file** for the current feature before doing any work.
-3. **Write your outputs** into the status file under your designated section.
-4. **Update phase status** immediately when you start (`in_progress`) and finish (`done`).
-5. **Never deviate** from the plan produced by the previous agent in the chain.
-6. **Record blockers** — if you cannot proceed, mark your phase `blocked` with a
+3. **Read the relevant instruction guides** (`.oakbox/instructions/`) before writing code.
+4. **Write your outputs** into the status file under your designated section.
+5. **Update phase status** immediately when you start (`in_progress`) and finish (`done`).
+6. **Never deviate** from the plan produced by the previous agent in the chain.
+7. **Record blockers** — if you cannot proceed, mark your phase `blocked` with a
    clear reason and stop.
-7. **Check `.oakbox/memory/`** before starting — past decisions and gotchas apply.
-8. **Append to `.oakbox/memory/`** if you discover something future agents should know.
+8. **Check `.oakbox/memory/`** before starting — past decisions and gotchas apply.
+9. **Append to `.oakbox/memory/`** if you discover something future agents should know.
+10. **Use `make` targets** for lint, test, build, and docker operations.
 
 ---
 
