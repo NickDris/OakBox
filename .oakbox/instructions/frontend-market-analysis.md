@@ -161,6 +161,7 @@ Breakpoints use `rem` so they respect the user's root font-size preference.
 │ • Screener   │                                                     │
 │ • Portfolio  │                                                     │
 │ • Analysis   │                                                     │
+│ • Political  │                                                     │
 │ • Alerts     │                                                     │
 │ • Settings   │                                                     │
 │          │                                                         │
@@ -595,6 +596,34 @@ src/frontend/features/
     api.ts
     types.ts
     index.ts
+  political/                       # See political-trades-analysis.md for full spec
+    components/
+      PoliticalDashboardPage.tsx
+      PersonCard.tsx
+      PersonsTable.tsx
+      PersonDetailHeader.tsx
+      PersonTradeHistory.tsx
+      PersonPerformanceCards.tsx
+      TradeFeed.tsx
+      TradeRow.tsx
+      SignalRankingsTable.tsx
+      SignalBadge.tsx
+      ClusterScoreBar.tsx
+      SentimentGauge.tsx
+      PartyBadge.tsx
+      CommitteeTag.tsx
+      FilingSourceLink.tsx
+      DisclaimerFooter.tsx
+    hooks/
+      usePoliticalDashboard.ts
+      usePoliticalPersons.ts
+      usePoliticalPerson.ts
+      usePoliticalTrades.ts
+      usePoliticalSignals.ts
+      useTickerPoliticalSignal.ts
+    api.ts
+    types.ts
+    index.ts
   settings/
     components/
       AppearanceSection.tsx
@@ -926,7 +955,7 @@ The sidebar lists 7 navigation items, but mobile allows a maximum of 5 tabs.
 | 4        | Bell     | Alerts     | `/alerts`     |
 | 5        | Menu     | More       | (drawer)      |
 
-The **More** tab opens a half-sheet drawer containing links to: Watchlist, Analysis, Settings.
+The **More** tab opens a half-sheet drawer containing links to: Watchlist, Analysis, Political, Settings.
 
 - Active tab uses `--accent-blue` icon + label color.
 - Inactive tabs use `--text-secondary`.

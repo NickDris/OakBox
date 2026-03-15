@@ -71,6 +71,7 @@ When executing a feature, follow these rules **exactly**:
 | Feature implementation | - | plan | write | - | - | - |
 | Troubleshooting / debugging | diagnose | - | fix | reproduce | record | - |
 | CI/CD | design | plan | write | validate | - | document |
+| Political data analysis | design | plan | write | test | record | document |
 
 ---
 
@@ -85,6 +86,7 @@ Agents **must** read and follow the relevant guide(s) before writing any code.
 | **React / TypeScript** | `.oakbox/instructions/react.md` | npm, ESLint, Vitest, components, hooks, state |
 | **Docker** | `.oakbox/instructions/docker.md` | Dockerfiles, Compose, multi-stage builds, security |
 | **Market Analysis UI/UX** | `.oakbox/instructions/frontend-market-analysis.md` | App shell, page wireframes, component library, data types, a11y |
+| **Political Trades Analysis** | `.oakbox/instructions/political-trades-analysis.md` | Political portfolio tracking, data pipeline, scoring, API, UI integration |
 
 ### DevOps
 
@@ -113,6 +115,7 @@ OakBox/
       react.md                     # React, TypeScript, npm, Vitest
       docker.md                    # Docker, Compose, multi-stage builds
       frontend-market-analysis.md  # Market analysis app UI/UX spec
+      political-trades-analysis.md # Political portfolio tracker & signals
     workflows/
       feature-pipeline.md          # Detailed pipeline spec
     status/                        # One file per feature (execution state)
