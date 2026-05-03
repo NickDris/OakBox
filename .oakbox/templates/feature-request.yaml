@@ -1,0 +1,43 @@
+id: "NNN"
+title: "Short feature title"
+description: |
+  Describe the feature here. Be specific:
+  - What capability is being added?
+  - Who will use it?
+  - What problem does it solve?
+  - Any technical constraints or compatibility requirements?
+  - What is explicitly out of scope?
+created: "YYYY-MM-DDTHH:MM:SSZ"
+updated: "YYYY-MM-DDTHH:MM:SSZ"
+phases:
+  architect:
+    status: pending
+    started_at: null
+    completed_at: null
+    output: null
+  planner:
+    status: pending
+    started_at: null
+    completed_at: null
+    output: null
+  coder:
+    status: pending
+    started_at: null
+    completed_at: null
+    re_entry_count: 0
+    output: null
+  tester:
+    status: pending
+    started_at: null
+    completed_at: null
+    output: null
+  memory:
+    status: pending
+    started_at: null
+    completed_at: null
+    output: null
+  docs:
+    status: pending
+    started_at: null
+    completed_at: null
+    output: null

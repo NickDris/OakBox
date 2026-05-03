@@ -1,0 +1,218 @@
+id: "000"
+title: "OakBox scaffolding setup"
+description: |
+  Set up the OakBox AI-assisted development scaffolding: agent roles, executable
+  pipeline orchestrator, YAML state management, and memory system.
+created: "2026-03-13T00:00:00Z"
+updated: "2026-03-13T00:00:00Z"
+phases:
+  architect:
+    status: done
+    started_at: "2026-03-13T00:00:00Z"
+    completed_at: "2026-03-13T00:01:00Z"
+    output:
+      system_design:
+        overview: "File-based scaffolding with a Python orchestrator driving a 6-phase agent pipeline."
+        components:
+          - name: "oakbox"
+            type: infrastructure
+            description: "Python CLI package that drives the agent pipeline"
+            technology: "Python 3.12 + anthropic SDK"
+            location: "oakbox/"
+          - name: "Agent prompts"
+            type: infrastructure
+            description: "System prompts for each of the 6 agent roles"
+            technology: "Markdown"
+            location: ".oakbox/agents/"
+          - name: "Status files"
+            type: infrastructure
+            description: "Per-feature YAML state, single source of truth"
+            technology: "YAML"
+            location: ".oakbox/status/"
+          - name: "Memory files"
+            type: infrastructure
+            description: "Persistent cross-feature knowledge base"
+            technology: "Markdown"
+            location: ".oakbox/memory/"
+        apis: []
+        data_models: []
+        file_plan:
+          - path: "oakbox/__init__.py"
+            action: create
+            description: "Package init"
+          - path: "oakbox/state.py"
+            action: create
+            description: "YAML state management"
+          - path: "oakbox/tools.py"
+            action: create
+            description: "Tool definitions and execution"
+          - path: "oakbox/context.py"
+            action: create
+            description: "Context assembly per phase"
+          - path: "oakbox/agents.py"
+            action: create
+            description: "Claude API tool-use loop"
+          - path: "oakbox/pipeline.py"
+            action: create
+            description: "Pipeline runner"
+          - path: "oakbox/cli.py"
+            action: create
+            description: "CLI entry point"
+          - path: "pyproject.toml"
+            action: create
+            description: "Package metadata and dependencies"
+        component_interactions: "CLI → pipeline → agents (Claude API with tools) → state file + memory files"
+      assumptions:
+        - "ANTHROPIC_API_KEY is set in the environment"
+        - "uv is available for dependency management"
+      risks:
+        - description: "Agent outputs may not conform to the expected YAML schema"
+          mitigation: "complete() tool enforces structured output; validate in pipeline"
+      memory_updates:
+        decisions:
+          - "Use YAML for state files (machine-readable, diff-friendly)"
+          - "Use Claude API tool-use loop so agents can read/write files directly"
+        context:
+          - "Pipeline orchestrator lives in oakbox/ Python package, run via uv run oakbox"
+  planner:
+    status: done
+    started_at: "2026-03-13T00:01:00Z"
+    completed_at: "2026-03-13T00:02:00Z"
+    output:
+      tasks:
+        - id: 1
+          title: "Create oakbox Python package"
+          files:
+            - path: "oakbox/__init__.py"
+              action: create
+            - path: "oakbox/state.py"
+              action: create
+            - path: "oakbox/tools.py"
+              action: create
+            - path: "oakbox/context.py"
+              action: create
+            - path: "oakbox/agents.py"
+              action: create
+            - path: "oakbox/pipeline.py"
+              action: create
+            - path: "oakbox/cli.py"
+              action: create
+            - path: "pyproject.toml"
+              action: create
+          description: "Implement the full Python orchestrator package with CLI entry point"
+          acceptance_criteria:
+            - "uv run oakbox --help returns usage information"
+            - "uv run oakbox new 001 'test' creates .oakbox/status/FEAT-001-test.yaml"
+            - "uv run oakbox list shows created features"
+          dependencies: []
+          layer: infrastructure
+        - id: 2
+          title: "Integration verification"
+          files: []
+          description: "Verify the CLI installs and basic commands work"
+          acceptance_criteria:
+            - "uv sync completes without errors"
+            - "uv run oakbox --help exits 0"
+          dependencies: [1]
+          layer: testing
+      memory_updates:
+        patterns: []
+  coder:
+    status: done
+    started_at: "2026-03-13T00:02:00Z"
+    completed_at: "2026-03-13T00:05:00Z"
+    re_entry_count: 0
+    output:
+      completed:
+        - task_id: 1
+          status: done
+          files_changed:
+            - path: "oakbox/__init__.py"
+              action: created
+            - path: "oakbox/state.py"
+              action: created
+            - path: "oakbox/tools.py"
+              action: created
+            - path: "oakbox/context.py"
+              action: created
+            - path: "oakbox/agents.py"
+              action: created
+            - path: "oakbox/pipeline.py"
+              action: created
+            - path: "oakbox/cli.py"
+              action: created
+            - path: "pyproject.toml"
+              action: created
+        - task_id: 2
+          status: done
+          files_changed: []
+      new_dependencies:
+        - "anthropic>=0.40.0"
+        - "pyyaml>=6.0"
+      deviations: []
+      summary: "Implemented the full oakbox orchestrator package."
+      memory_updates:
+        patterns: []
+        gotchas: []
+  tester:
+    status: done
+    started_at: "2026-03-13T00:05:00Z"
+    completed_at: "2026-03-13T00:06:00Z"
+    output:
+      results:
+        - task_id: 2
+          criterion: "uv sync completes without errors"
+          test_file: null
+          test_name: null
+          test_type: integration
+          passed: true
+          notes: null
+        - task_id: 2
+          criterion: "uv run oakbox --help exits 0"
+          test_file: null
+          test_name: null
+          test_type: integration
+          passed: true
+          notes: null
+      summary:
+        total: 2
+        passed: 2
+        failed: 0
+      verdict: pass
+      failure_summary: null
+      memory_updates:
+        gotchas: []
+  memory:
+    status: done
+    started_at: "2026-03-13T00:06:00Z"
+    completed_at: "2026-03-13T00:07:00Z"
+    output:
+      new_entries:
+        decisions:
+          - |
+            ## FEAT-000: OakBox scaffolding (2026-03-13)
+            - **Decision:** Use YAML for feature state files
+            - **Rationale:** Machine-readable, diff-friendly, no markdown parsing needed
+            - **Alternatives considered:** Markdown with frontmatter (rejected: fragile parsing)
+        patterns: []
+        gotchas: []
+        context:
+          - "Pipeline orchestrator: `uv run oakbox <command>`. State files: .oakbox/status/FEAT-*.yaml"
+      updated_files:
+        - decisions.md
+        - context.md
+      summary: "Recorded YAML state decision and pipeline context."
+  docs:
+    status: done
+    started_at: "2026-03-13T00:07:00Z"
+    completed_at: "2026-03-13T00:08:00Z"
+    output:
+      documents:
+        - filename: "docs/_index.md"
+          title: "Documentation Index"
+          content: |
+            # OakBox Documentation
+
+            - [Pipeline Reference](pipeline.md) — how the agent pipeline works
+      index_entries: []
+      summary: "Initialized docs/_index.md."
