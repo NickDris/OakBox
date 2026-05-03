@@ -2,97 +2,110 @@
 
 ## Project Overview
 
-OakBox is a structured, multi-agent AI development workflow. When a feature is
-requested, a pipeline of specialized agents executes in sequence. Each agent
-follows the plan blindly, updates execution status, and hands off to the next.
+OakBox is a multi-agent AI development pipeline with a Python orchestrator that
+drives six specialized agents in sequence. Each agent is invoked via the Claude
+API with tool-use capability (read/write files, run commands). State is stored
+in machine-readable YAML files so the pipeline is fully resumable.
 
-**Tech stack skills:** Python 3.12, React (TypeScript), Docker, PostgreSQL
-
----
-
-## Agent Team & Execution Order
-
-Every feature request triggers this pipeline in strict order:
-
-| # | Agent | Role | Prompt file |
-|---|-------|------|-------------|
-| 1 | **Architect** | Designs system-level approach, defines components, APIs, data models | `.oakbox/agents/architect.md` |
-| 2 | **Feature Planner** | Breaks the architect's design into ordered, atomic tasks with acceptance criteria | `.oakbox/agents/planner.md` |
-| 3 | **Coder** | Implements each task from the plan, writing production code | `.oakbox/agents/coder.md` |
-| 4 | **Tester** | Writes and runs tests, validates acceptance criteria, reports failures back | `.oakbox/agents/tester.md` |
-| 5 | **Memory** | Records decisions, patterns, gotchas, and project context for future agents | `.oakbox/agents/memory.md` |
-| 6 | **Tech Doc Writer** | Produces user-facing and developer-facing documentation | `.oakbox/agents/docs.md` |
+**Tech stack:** Python 3.12, React (TypeScript), Docker, PostgreSQL
 
 ---
 
-## How the Workflow Runs
-
-### Triggering a feature
-
-Create a new file in `.oakbox/status/` using the template:
+## Quick Start
 
 ```bash
-cp .oakbox/templates/feature-request.md .oakbox/status/FEAT-<id>-<short-name>.md
+# 1. Install pipeline dependencies
+uv sync
+
+# 2. Set your API key
+export ANTHROPIC_API_KEY=sk-...
+
+# 3. Create a new feature
+make feature-new ID=001 TITLE="Add user auth" DESC="JWT-based login and registration"
+
+# 4. Run the full pipeline
+make feature-run ID=001
+
+# 5. Check status at any time
+make feature-status ID=001
+
+# 6. Resume from a specific phase (e.g. after fixing a blocker)
+make feature-run-from ID=001 FROM=coder
 ```
 
-Then fill in the **Request** section and invoke the pipeline (see below).
+---
 
-### Pipeline execution
+## Agent Pipeline
 
-When executing a feature, follow these rules **exactly**:
+Six agents run in strict order. Each agent uses the Claude API in a tool-use
+loop — it can read files, write files, and run allowed commands before signalling
+completion with a structured YAML output.
 
-1. **Read** `.oakbox/status/FEAT-<id>-<short-name>.md` to get the current state.
-2. **Identify** which agent phase is `status: pending` (the next to run).
-3. **Load** that agent's prompt from `.oakbox/agents/<agent>.md`.
-4. **Execute** the agent's instructions. Write all outputs into the designated
-   sections of the status file.
-5. **Update** the phase status to `done` with a timestamp.
-6. **Proceed** to the next pending phase. Repeat until all phases are `done`.
+| # | Agent | Role | System prompt |
+|---|-------|------|---------------|
+| 1 | **Architect** | Designs system-level approach, APIs, data models, file plan | `.oakbox/agents/architect.md` |
+| 2 | **Planner** | Decomposes the design into atomic, ordered tasks with acceptance criteria | `.oakbox/agents/planner.md` |
+| 3 | **Coder** | Implements each task, runs lint/typecheck | `.oakbox/agents/coder.md` |
+| 4 | **Tester** | Writes and runs tests for every acceptance criterion | `.oakbox/agents/tester.md` |
+| 5 | **Memory** | Persists decisions, patterns, and gotchas to memory files | `.oakbox/agents/memory.md` |
+| 6 | **Docs** | Writes developer and user documentation | `.oakbox/agents/docs.md` |
 
-### Status file is the single source of truth
+### Feedback loop
 
-- Never skip a phase.
-- Never modify a phase marked `done`.
-- If a phase fails, mark it `blocked` with a reason and stop the pipeline.
-- The Tester agent may send the pipeline back to Coder (mark Coder as `pending`
-  again) if tests fail — this is the only allowed backward jump.
+If the Tester phase fails, the orchestrator automatically resets Coder and
+Tester to `pending` and re-runs them. Maximum 3 re-entry cycles before the
+feature is marked `blocked`.
+
+Memory and Docs **always** run after a successful Tester pass, regardless of
+how many Coder re-entries occurred.
 
 ---
 
-## Agent Skills Matrix
+## How the Orchestrator Works
 
-| Skill | Architect | Planner | Coder | Tester | Memory | Docs |
-|-------|-----------|---------|-------|--------|--------|------|
-| Python 3.12 | design | plan | write | test | - | document |
-| React / TypeScript | design | plan | write | test | - | document |
-| Docker | design | plan | write | test | - | document |
-| PostgreSQL | design | plan | - | test | - | document |
-| API design (REST/GraphQL) | design | plan | write | test | - | document |
-| Feature implementation | - | plan | write | - | - | - |
-| Troubleshooting / debugging | diagnose | - | fix | reproduce | record | - |
-| CI/CD | design | plan | write | validate | - | document |
-| Political data analysis | design | plan | write | test | record | document |
+### `oakbox/` Python package
 
----
+| Module | Purpose |
+|--------|---------|
+| `state.py` | Load/save YAML state; manage phase transitions |
+| `tools.py` | Tool schemas (read_file, write_file, run_command, etc.) + execution |
+| `context.py` | Assemble system prompt + user message per phase |
+| `agents.py` | Claude API tool-use loop; returns `complete()` output |
+| `pipeline.py` | Drive the phase sequence; handle tester verdict + re-entry; flush memory |
+| `cli.py` | `oakbox new / run / status / list` CLI commands |
 
-## Code Conventions & Style Guides
+### State file (YAML)
 
-Detailed, unambiguous conventions for each skill area live in `.oakbox/instructions/`.
-Agents **must** read and follow the relevant guide(s) before writing any code.
+Each feature has one file in `.oakbox/status/FEAT-<id>-<slug>.yaml`. It is the
+single source of truth. The orchestrator reads and writes it — never edit it
+manually during a run.
 
-| Guide | File | Covers |
-|-------|------|--------|
-| **Python** | `.oakbox/instructions/python.md` | uv, ruff, pytest, naming, types, project layout |
-| **React / TypeScript** | `.oakbox/instructions/react.md` | npm, ESLint, Vitest, components, hooks, state |
-| **Docker** | `.oakbox/instructions/docker.md` | Dockerfiles, Compose, multi-stage builds, security |
-| **Market Analysis UI/UX** | `.oakbox/instructions/frontend-market-analysis.md` | App shell, page wireframes, component library, data types, a11y |
-| **Political Trades Analysis** | `.oakbox/instructions/political-trades-analysis.md` | Political portfolio tracking, data pipeline, scoring, API, UI integration |
+```yaml
+id: "001"
+title: "Add user auth"
+description: "..."
+phases:
+  architect:
+    status: done          # pending | in_progress | done | blocked
+    started_at: "..."
+    completed_at: "..."
+    output: { ... }       # structured output from the agent
+  coder:
+    status: pending
+    re_entry_count: 0     # incremented on each Tester->Coder re-entry
+    ...
+```
 
-### DevOps
+### Agent tools
 
-- **Package managers:** `uv` (Python), `npm` (frontend). No alternatives.
-- **Task runner:** GNU Make — see `Makefile` at project root.
-- Run `make help` to list all available targets.
+| Tool | Who can use it | What it does |
+|------|---------------|--------------|
+| `read_file` | all | Read any file in the repo |
+| `list_directory` | all | List directory contents |
+| `search_files` | all | Grep across files |
+| `write_file` | coder, tester, memory, docs | Write/overwrite a file |
+| `run_command` | coder, tester | Run lint/test/typecheck (allowlisted prefixes only) |
+| `complete` | all | Signal done + return structured output |
 
 ---
 
@@ -100,65 +113,72 @@ Agents **must** read and follow the relevant guide(s) before writing any code.
 
 ```
 OakBox/
-  CLAUDE.md                        # This file — the master playbook
-  Makefile                         # DevOps task runner (lint, test, build, docker)
+  CLAUDE.md                         # This file — master reference
+  Makefile                          # DevOps + pipeline task runner
+  pyproject.toml                    # Python package (oakbox CLI + deps)
+  oakbox/                           # Orchestrator package
+    state.py
+    tools.py
+    context.py
+    agents.py
+    pipeline.py
+    cli.py
   .oakbox/
-    agents/                        # Agent role prompts
-      architect.md
-      planner.md
-      coder.md
-      tester.md
-      memory.md
-      docs.md
-    instructions/                  # Code conventions & style guides
-      python.md                    # Python 3.12, uv, ruff, pytest
-      react.md                     # React, TypeScript, npm, Vitest
-      docker.md                    # Docker, Compose, multi-stage builds
-      frontend-market-analysis.md  # Market analysis app UI/UX spec
-      political-trades-analysis.md # Political portfolio tracker & signals
-    workflows/
-      feature-pipeline.md          # Detailed pipeline spec
-    status/                        # One file per feature (execution state)
-      FEAT-000-example.md          # Example status file
-    memory/
-      decisions.md                 # Architectural decisions log
-      patterns.md                  # Reusable patterns & snippets
-      gotchas.md                   # Known pitfalls & workarounds
-      context.md                   # Project-wide context for agents
+    agents/                         # Agent system prompts (architect, planner, ...)
+    instructions/                   # Coding standards per technology
+    status/                         # FEAT-NNN-slug.yaml — one per feature
+    memory/                         # decisions.md, patterns.md, gotchas.md, context.md
     templates/
-      feature-request.md           # Blank feature template
-  docs/                            # Generated documentation output
-    _index.md                      # Docs index
-  src/                             # Application source (created per feature)
-  tests/                           # Test suite (created per feature)
-  docker/                          # Dockerfiles & compose (created per feature)
+      feature-request.yaml          # Blank feature template
+  src/                              # Application source (created per feature)
+  tests/                            # Test suite (created per feature)
+  docker/                           # Dockerfiles & compose (created per feature)
+  docs/                             # Documentation output
 ```
 
 ---
 
-## Rules for All Agents
+## Code Conventions
 
-1. **Read your prompt file** (`.oakbox/agents/<role>.md`) before acting.
-2. **Read the status file** for the current feature before doing any work.
-3. **Read the relevant instruction guides** (`.oakbox/instructions/`) before writing code.
-4. **Write your outputs** into the status file under your designated section.
-5. **Update phase status** immediately when you start (`in_progress`) and finish (`done`).
-6. **Never deviate** from the plan produced by the previous agent in the chain.
-7. **Record blockers** — if you cannot proceed, mark your phase `blocked` with a
-   clear reason and stop.
-8. **Check `.oakbox/memory/`** before starting — past decisions and gotchas apply.
-9. **Append to `.oakbox/memory/`** if you discover something future agents should know.
-10. **Use `make` targets** for lint, test, build, and docker operations.
+Detailed style guides live in `.oakbox/instructions/` and are automatically
+included in each agent's context.
+
+| Guide | File | Covers |
+|-------|------|--------|
+| Python | `python.md` | uv, ruff, pytest, naming, types |
+| React / TypeScript | `react.md` | npm, ESLint, Vitest, components, hooks |
+| Docker | `docker.md` | Dockerfiles, Compose, multi-stage, security |
+| Market Analysis UI/UX | `frontend-market-analysis.md` | App shell, components, a11y |
+| Political Trades Analysis | `political-trades-analysis.md` | Portfolio tracking, scoring |
+
+**Package managers:** `uv` (Python), `npm` (frontend). No alternatives.
+**Task runner:** GNU Make — run `make help` to list all targets.
+**Model override:** set `OAKBOX_MODEL` env var (default: `claude-sonnet-4-6`).
 
 ---
 
-## Quick Start
+## Make Targets (Pipeline)
 
-To process a new feature request:
+| Target | Usage |
+|--------|-------|
+| `make feature-new` | `make feature-new ID=001 TITLE="title" DESC="description"` |
+| `make feature-run` | `make feature-run ID=001` |
+| `make feature-run-from` | `make feature-run-from ID=001 FROM=coder` |
+| `make feature-status` | `make feature-status ID=001` |
+| `make feature-list` | `make feature-list` |
 
-```
-1. cp .oakbox/templates/feature-request.md .oakbox/status/FEAT-001-my-feature.md
-2. Edit the Request section with the feature description
-3. Run the pipeline: execute each agent in order (Architect → Planner → Coder → Tester → Memory → Docs)
-4. Monitor progress in the status file
-```
+---
+
+## Memory System
+
+Four persistent files store cross-feature knowledge:
+
+| File | Contents |
+|------|---------|
+| `decisions.md` | Architectural choices and rationale |
+| `patterns.md` | Reusable code patterns and conventions |
+| `gotchas.md` | Pitfalls, bugs, and workarounds |
+| `context.md` | Current system shape — services, conventions, state |
+
+The Memory agent reads and writes these directly. All other agents receive the
+relevant files as read-only context at the start of each phase.

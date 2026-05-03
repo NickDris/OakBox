@@ -7,6 +7,7 @@
        build build-backend build-frontend \
        docker-up docker-down docker-build docker-logs docker-shell-backend \
        db-migrate db-upgrade db-downgrade \
+       feature-new feature-run feature-run-from feature-status feature-list \
        clean
 
 # --------------------------------------------------------------------------- #
@@ -143,6 +144,29 @@ db-upgrade: ## Apply all pending migrations
 
 db-downgrade: ## Revert the last migration
 	$(UV) run alembic downgrade -1
+
+# --------------------------------------------------------------------------- #
+#  Clean
+# --------------------------------------------------------------------------- #
+
+# --------------------------------------------------------------------------- #
+#  Feature Pipeline
+# --------------------------------------------------------------------------- #
+
+feature-new: ## Create a new feature  (usage: make feature-new ID=001 TITLE="my feature" DESC="description")
+	$(UV) run oakbox new $(ID) "$(TITLE)" $(if $(DESC),--description "$(DESC)",)
+
+feature-run: ## Run the full pipeline for a feature  (usage: make feature-run ID=001)
+	$(UV) run oakbox run $(ID)
+
+feature-run-from: ## Resume pipeline from a specific phase  (usage: make feature-run-from ID=001 FROM=coder)
+	$(UV) run oakbox run $(ID) --from-phase $(FROM)
+
+feature-status: ## Show phase status for a feature  (usage: make feature-status ID=001)
+	$(UV) run oakbox status $(ID)
+
+feature-list: ## List all features and their current phase
+	$(UV) run oakbox list
 
 # --------------------------------------------------------------------------- #
 #  Clean
